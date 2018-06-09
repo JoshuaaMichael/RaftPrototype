@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27703.2018
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaftPrototype", "RaftPrototype\RaftPrototype.csproj", "{AF8107FB-EFEB-4045-87D6-42C4D76C2409}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "RaftPrototypeInstaller", "RaftPrototypeInstaller\RaftPrototypeInstaller.vdproj", "{B0027A93-04A8-4C1D-952C-063F09283C2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,8 @@ Global
 		{AF8107FB-EFEB-4045-87D6-42C4D76C2409}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF8107FB-EFEB-4045-87D6-42C4D76C2409}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF8107FB-EFEB-4045-87D6-42C4D76C2409}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0027A93-04A8-4C1D-952C-063F09283C2B}.Debug|Any CPU.ActiveCfg = Debug
+		{B0027A93-04A8-4C1D-952C-063F09283C2B}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
