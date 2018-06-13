@@ -8,14 +8,22 @@ namespace RaftPrototype
 {
     public partial class RaftStartNode : Form
     {
-        private const string CONFIG_FILE = "./config.json";
+        private readonly string CONFIG_FILE;
         private RaftBootstrapConfig config;
 
 
-        public RaftStartNode()
+        public RaftStartNode(string configFile)
         {
             InitializeComponent();
-            Initialize();
+            if (File.Exists(configFile))
+            {
+                CONFIG_FILE = configFile;
+                Initialize();
+            }
+            else
+            {
+                Close();
+            }
         }
 
         private void Initialize()
