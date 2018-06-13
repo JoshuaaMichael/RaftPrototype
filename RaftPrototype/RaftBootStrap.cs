@@ -73,9 +73,9 @@ namespace RaftPrototype
             //string debug = Path.Combine(Environment.CurrentDirectory, "debug.log");
             //string debug = Path.Combine("C:\\Users\\Tori\\Downloads\\debug.log");
 
-            RaftLogging.Instance.OverwriteLoggingFile(LOGFILE);
+            RaftLogging.Instance.LogFilename = LOGFILE;
             RaftLogging.Instance.DeleteExistingLogFile();
-            RaftLogging.Instance.SetLogLevel(ERaftLogType.INFO);
+            RaftLogging.Instance.LogLevel = ERaftLogType.Info;
         }
 
         private void SetNodeCountSelector()

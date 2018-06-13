@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using TeamDecided.RaftConsensus.Consensus;
 using TeamDecided.RaftConsensus.Consensus.Interfaces;
-using TeamDecided.RaftConsensus.Common;
 using TeamDecided.RaftConsensus.Consensus.Enums;
 using TeamDecided.RaftConsensus.Common.Logging;
 using Newtonsoft.Json;
@@ -37,6 +36,7 @@ namespace RaftPrototype
         private static Mutex mutex = new Mutex();
         private bool onClosing;
         private bool isStopped;
+        private const int MAX_ATTEMPTS = 1;
 
         public RaftNode(string serverName, string configFile, string logFile, bool isInstansiated = false)
         {
@@ -46,6 +46,7 @@ namespace RaftPrototype
             logfile = logFile;
             log = new List<Tuple<string, string>>();
             isStopped = false;
+
 
             mainThread = SynchronizationContext.Current;
             if (mainThread == null) { mainThread = new SynchronizationContext(); }
@@ -113,12 +114,18 @@ namespace RaftPrototype
                     CreateNode();
 
                     //call the leader to join cluster
-                    Task<EJoinClusterResponse> joinTask = node.JoinCluster(config.clusterName, config.clusterPassword, config.maxNodes, useEncryption);
+                    Task<EJoinClusterResponse> joinTask = node.JoinCluster(config.clusterName, 
+                        config.clusterPassword, 
+                        config.maxNodes, 
+                        MAX_ATTEMPTS,
+                        useEncryption
+                        );
+
                     joinTask.Wait();
 
                     //check the result of the attempt to join the cluster
                     EJoinClusterResponse result = joinTask.Result;
-                    if (result == EJoinClusterResponse.ACCEPT)
+                    if (result == EJoinClusterResponse.Accept)
                     {
                         break;
                     }
@@ -167,8 +174,8 @@ namespace RaftPrototype
             AddPeers(config, index);
 
             //Subscribe to the node UAS start/stop event
-            node.StopUAS += HandleUASStop;
-            node.StartUAS += HandleUASStart;
+            node.OnStopUAS += HandleUASStop;
+            node.OnStartUAS += HandleUASStart;
             node.OnNewCommitedEntry += HandleNewCommitEntry;
         }
 
@@ -178,9 +185,9 @@ namespace RaftPrototype
             //string debug = Path.Combine(Environment.CurrentDirectory, "debug.log");
             //string debug = Path.Combine("C:\\Users\\Tori\\Downloads\\debug.log");
 
-            RaftLogging.Instance.OverwriteLoggingFile(logfile);
+            RaftLogging.Instance.LogFilename = logfile;
             RaftLogging.Instance.EnableBuffer(50);
-            RaftLogging.Instance.SetLogLevel(logLevel);
+            RaftLogging.Instance.LogLevel = logLevel;
             RaftLogging.Instance.OnNewLogEntry += HandleInfoLogUpdate;
         }
 
@@ -283,7 +290,7 @@ namespace RaftPrototype
             }, null);
         }
 
-        private void HandleUASStop(object sender, EStopUASReason e)
+        private void HandleUASStop(object sender, EStopUasReason e)
         {
             mainThread.Post((object state) =>
             {
@@ -340,7 +347,7 @@ namespace RaftPrototype
 
         private void cbDebugLevel_SelectedIndexChanged(object sender, EventArgs e)
         {
-            RaftLogging.Instance.SetLogLevel((ERaftLogType)cbDebugLevel.SelectedIndex);
+            RaftLogging.Instance.LogLevel = ((ERaftLogType)cbDebugLevel.SelectedIndex);
         }
 
         #endregion

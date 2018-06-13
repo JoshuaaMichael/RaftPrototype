@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
-using TeamDecided.RaftConsensus.Common;
-
+using TeamDecided.RaftConsensus.Common.Logging;
 namespace RaftPrototype
 {
     public class RaftBootstrapConfig
