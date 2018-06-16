@@ -122,9 +122,12 @@
             // 
             this.tbIPAddress.Location = new System.Drawing.Point(168, 30);
             this.tbIPAddress.Name = "tbIPAddress";
+            this.tbIPAddress.PasswordChar = '*';
             this.tbIPAddress.ReadOnly = true;
             this.tbIPAddress.Size = new System.Drawing.Size(157, 20);
             this.tbIPAddress.TabIndex = 4;
+            this.tbIPAddress.MouseEnter += new System.EventHandler(this.tbIPAddress_MouseEnter);
+            this.tbIPAddress.MouseLeave += new System.EventHandler(this.tbIPAddress_MouseLeave);
             // 
             // tbPort
             // 

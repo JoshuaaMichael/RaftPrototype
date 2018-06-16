@@ -53,12 +53,25 @@ namespace RaftPrototype
 
             //Clean out old log
             File.Delete(string.Format("{0}-debug.log", config.nodeNames[cbNodes.SelectedIndex]));
+            int index = cbNodes.SelectedIndex;
             //start up node1 first so that it can become leader
-            startInfo.Arguments = string.Format("{0} {1} {2}", config.nodeNames[cbNodes.SelectedIndex], CONFIG_FILE, string.Format("{0}-debug.log", config.nodeNames[cbNodes.SelectedIndex]));
+            //startInfo.Arguments = string.Format("{0} {1} {2}", config.nodeNames[cbNodes.SelectedIndex], CONFIG_FILE, string.Format("{0}-debug.log", config.nodeNames[cbNodes.SelectedIndex]));
+            startInfo.Arguments = string.Format("{0} {1} {2}", index, CONFIG_FILE, string.Format("{0}-debug.log", config.nodeNames[cbNodes.SelectedIndex]));
             Process.Start(startInfo);
             //sleep to give head start for setting it self up
 
             Close();
+        }
+
+        private void tbIPAddress_MouseEnter(object sender, EventArgs e)
+        {
+            tbIPAddress.PasswordChar = '\0';
+        }
+
+
+        private void tbIPAddress_MouseLeave(object sender, EventArgs e)
+        {
+            tbIPAddress.PasswordChar = '*';
         }
     }
 }
