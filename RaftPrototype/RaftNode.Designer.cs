@@ -53,10 +53,10 @@
             this.btStopNode = new System.Windows.Forms.Button();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.label5 = new System.Windows.Forms.Label();
-            this.tbLog = new System.Windows.Forms.TextBox();
             this.cbDebugLevel = new System.Windows.Forms.ComboBox();
             this.label6 = new System.Windows.Forms.Label();
             this.lServerStatus = new System.Windows.Forms.Label();
+            this.tbLog = new System.Windows.Forms.TextBox();
             this.groupBox2.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -172,6 +172,7 @@
             // 
             // logDataGrid
             // 
+            this.logDataGrid.AllowDrop = true;
             this.logDataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.logDataGrid.Location = new System.Drawing.Point(6, 19);
             this.logDataGrid.Name = "logDataGrid";
@@ -340,17 +341,6 @@
             this.label5.TabIndex = 2;
             this.label5.Text = "Server Status:";
             // 
-            // tbLog
-            // 
-            this.tbLog.Location = new System.Drawing.Point(6, 58);
-            this.tbLog.Multiline = true;
-            this.tbLog.Name = "tbLog";
-            this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tbLog.Size = new System.Drawing.Size(343, 450);
-            this.tbLog.TabIndex = 0;
-            this.tbLog.TabStop = false;
-            this.tbLog.Click += new System.EventHandler(this.Stop_Click);
-            // 
             // cbDebugLevel
             // 
             this.cbDebugLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -381,6 +371,17 @@
             this.lServerStatus.TabIndex = 6;
             this.lServerStatus.Text = "label7";
             // 
+            // tbLog
+            // 
+            this.tbLog.Location = new System.Drawing.Point(6, 58);
+            this.tbLog.Multiline = true;
+            this.tbLog.Name = "tbLog";
+            this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbLog.Size = new System.Drawing.Size(343, 450);
+            this.tbLog.TabIndex = 0;
+            this.tbLog.TabStop = false;
+            this.tbLog.Click += new System.EventHandler(this.Stop_Click);
+            // 
             // RaftNode
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -390,7 +391,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "RaftNode";
-            this.Text = "RaftNode2";
+            this.Text = "RaftNode";
             this.groupBox2.ResumeLayout(false);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();

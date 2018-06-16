@@ -17,42 +17,43 @@ namespace RaftPrototype
 {
     public partial class RaftNode : Form
     {
-        private IConsensus<string, string> node;
-        private SynchronizationContext mainThread;
+        private IConsensus<string, string> _node;
+        private SynchronizationContext _mainThread;
 
-        private List<Tuple<string, string>> log;
-        private static object updateWindowLockObject = new object();
+        private readonly List<Tuple<string, string>> _log;
+        private static readonly object UpdateWindowLockObject = new object();
 
-        private RaftBootstrapConfig config;
-        private string servername;
-        private string serverip;
-        private int serverport;
-        private ERaftLogType logLevel;
-        private bool useEncryption;
-        private int index;
-        private string configurationFile;
-        private string logfile;
+        private RaftBootstrapConfig _config;
+        public string Servername { get; private set; }
+        public string Serverip { get; private set; }
+        public int Serverport { get; private set; }
+        private ERaftLogType _logLevel;
+        private bool _useEncryption;
+        public int Index { get; private set; }
+        private readonly string _configurationFile;
+        private readonly string _logfile;
 
-        private static Mutex mutex = new Mutex();
-        private bool onClosing;
-        private bool isStopped;
+        private static readonly Mutex Mutex = new Mutex();
+        private bool _onClosing;
+        private bool _isStopped;
         private const int MAX_ATTEMPTS = 1;
 
-        public RaftNode(string serverName, string configFile, string logFile, bool isInstansiated = false)
+        //public RaftNode(string serverName, string configFile, string logFile, bool isInstansiated = false)
+        public RaftNode(int index, string configFile, string logFile, bool isInstansiated = false)
         {
             //set local attributes
-            servername = serverName;
-            configurationFile = configFile;
-            logfile = logFile;
-            log = new List<Tuple<string, string>>();
-            isStopped = false;
+            Index = index;
+            _configurationFile = configFile;
+            _logfile = logFile;
+            _log = new List<Tuple<string, string>>();
+            _isStopped = false;
 
 
-            mainThread = SynchronizationContext.Current;
-            if (mainThread == null) { mainThread = new SynchronizationContext(); }
+            _mainThread = SynchronizationContext.Current;
+            if (_mainThread == null) { _mainThread = new SynchronizationContext(); }
 
 
-            onClosing = false;
+            _onClosing = false;
 
             InitializeComponent();
             Initialize();
@@ -67,11 +68,11 @@ namespace RaftPrototype
 
         private void Initialize()
         {
-            Text = string.Format("{0} - {1}", this.Text, servername);
+            LoadConfig();
+            Text = string.Format("{0} - {1}", this.Text, Servername);
             btStart.Enabled = false;
             FormBorderStyle = FormBorderStyle.FixedDialog;
 
-            LoadConfig();
 
             ERaftLogType[] logLevels = Enum.GetValues(typeof(ERaftLogType)).Cast<ERaftLogType>().ToArray();
             string[] logLevelStrings = new string[logLevels.Length];
@@ -81,7 +82,7 @@ namespace RaftPrototype
                 logLevelStrings[i] = (temp[0] + "").ToUpper() + temp.Substring(1);
             }
             cbDebugLevel.DataSource = logLevelStrings;
-            cbDebugLevel.SelectedIndex = (int) logLevel;
+            cbDebugLevel.SelectedIndex = (int) _logLevel;
 
             SetupLogging();
 
@@ -93,14 +94,15 @@ namespace RaftPrototype
 
         public void LoadConfig()
         {
-            string json = File.ReadAllText(configurationFile);
-            config = JsonConvert.DeserializeObject<RaftBootstrapConfig>(json);
+            string json = File.ReadAllText(_configurationFile);
+            _config = JsonConvert.DeserializeObject<RaftBootstrapConfig>(json);
 
-            index = int.Parse(servername.Replace("Node", ""))-1;
-            serverport = config.nodePorts[index];
-            serverip = config.nodeIPAddresses[index];
-            logLevel = config.logLevel;
-            useEncryption = config.useEncryption;
+            //index = int.Parse(servername.Replace("Node", ""))-1;
+            Servername = _config.nodeNames[Index];
+            Serverport = _config.nodePorts[Index];
+            Serverip = _config.nodeIPAddresses[Index];
+            _logLevel = _config.logLevel;
+            _useEncryption = _config.useEncryption;
             }
 
         private void StartNode()
@@ -114,11 +116,11 @@ namespace RaftPrototype
                     CreateNode();
 
                     //call the leader to join cluster
-                    Task<EJoinClusterResponse> joinTask = node.JoinCluster(config.clusterName, 
-                        config.clusterPassword, 
-                        config.maxNodes, 
+                    Task<EJoinClusterResponse> joinTask = _node.JoinCluster(_config.clusterName, 
+                        _config.clusterPassword, 
+                        _config.maxNodes, 
                         MAX_ATTEMPTS,
-                        useEncryption
+                        _useEncryption
                         );
 
                     joinTask.Wait();
@@ -131,17 +133,17 @@ namespace RaftPrototype
                     }
                     else
                     {
-                        node.Dispose();
-                        log.Clear();
-                        if (MessageBox.Show("Failed to join cluster, do you want to retry?", "Error " + servername, MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
+                        _node.Dispose();
+                        _log.Clear();
+                        if (MessageBox.Show("Failed to join cluster, do you want to retry?", "Error " + Servername, MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
                         {
                             continue;
                         }
                         else
                         {
-                            mainThread.Send((object state) =>
+                            _mainThread.Send((object state) =>
                             {
-                                lock (updateWindowLockObject)
+                                lock (UpdateWindowLockObject)
                                 {
                                     btStart.Enabled = true;
                                 }
@@ -152,9 +154,9 @@ namespace RaftPrototype
                 }
 
                 //update the main UI
-                mainThread.Send((object state) =>
+                _mainThread.Send((object state) =>
                 {
-                    lock (updateWindowLockObject)
+                    lock (UpdateWindowLockObject)
                     {
                         UpdateNodeWindow();
                     }
@@ -162,21 +164,21 @@ namespace RaftPrototype
             }
             catch (Exception e)
             {
-                MessageBox.Show(servername + "\n" + e.ToString());
+                MessageBox.Show(Servername + "\n" + e.ToString());
             }
         }
 
         private void CreateNode()
         {
             //Instantiate node
-            node = new RaftConsensus<string, string>(config.nodeNames[index], config.nodePorts[index]);
+            _node = new RaftConsensus<string, string>(_config.nodeNames[Index], _config.nodePorts[Index]);
             //Add peer to the node
-            AddPeers(config, index);
+            AddPeers(_config, Index);
 
             //Subscribe to the node UAS start/stop event
-            node.OnStopUAS += HandleUASStop;
-            node.OnStartUAS += HandleUASStart;
-            node.OnNewCommitedEntry += HandleNewCommitEntry;
+            _node.OnStopUAS += HandleUASStop;
+            _node.OnStartUAS += HandleUASStart;
+            _node.OnNewCommitedEntry += HandleNewCommitEntry;
         }
 
         private void SetupLogging()
@@ -185,9 +187,9 @@ namespace RaftPrototype
             //string debug = Path.Combine(Environment.CurrentDirectory, "debug.log");
             //string debug = Path.Combine("C:\\Users\\Tori\\Downloads\\debug.log");
 
-            RaftLogging.Instance.LogFilename = logfile;
+            RaftLogging.Instance.LogFilename = _logfile;
             RaftLogging.Instance.EnableBuffer(50);
-            RaftLogging.Instance.LogLevel = logLevel;
+            RaftLogging.Instance.LogLevel = _logLevel;
             RaftLogging.Instance.OnNewLogEntry += HandleInfoLogUpdate;
         }
 
@@ -195,11 +197,11 @@ namespace RaftPrototype
         {
             try
             {
-                if (mutex.WaitOne())
+                if (Mutex.WaitOne())
                 {
-                    if (!onClosing)
+                    if (!_onClosing)
                     {
-                        mainThread.Post((object state) =>
+                        _mainThread.Post((object state) =>
                         {
                             if (CheckLogEntry(e.Item2))
                             {
@@ -219,7 +221,7 @@ namespace RaftPrototype
             }
             finally
             {
-                mutex.ReleaseMutex();
+                Mutex.ReleaseMutex();
             }
         }
 
@@ -229,8 +231,8 @@ namespace RaftPrototype
         {
             try
             {
-                lbNodeName.Text = servername;
-                if (node != null && node.IsUASRunning())
+                lbNodeName.Text = Servername;
+                if (_node != null && _node.IsUASRunning())
                 {
                     lbServerState.Text = "Active";
                     lbServerState.ForeColor = System.Drawing.Color.Green;
@@ -242,7 +244,7 @@ namespace RaftPrototype
                 }
                 else
                 {
-                    if (isStopped)
+                    if (_isStopped)
                     {
                         lbServerState.Text = "Offline";
                         lbServerState.ForeColor = System.Drawing.Color.Red;
@@ -267,8 +269,8 @@ namespace RaftPrototype
                 tbKey.Clear();
                 tbValue.Clear();
                 logDataGrid.DataSource = null;
-                logDataGrid.DataSource = log;
-                if (log.Count() != 0)
+                logDataGrid.DataSource = _log;
+                if (_log.Count() != 0)
                 {
                     logDataGrid.Columns[0].HeaderText = "Key";
                     logDataGrid.Columns[1].HeaderText = "Value";
@@ -284,7 +286,7 @@ namespace RaftPrototype
 
         private void HandleUASStart(object sender, EventArgs e)
         {
-            mainThread.Post((object state) =>
+            _mainThread.Post((object state) =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -292,7 +294,7 @@ namespace RaftPrototype
 
         private void HandleUASStop(object sender, EStopUasReason e)
         {
-            mainThread.Post((object state) =>
+            _mainThread.Post((object state) =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -300,9 +302,9 @@ namespace RaftPrototype
 
         private void HandleNewCommitEntry(object sender, Tuple<string, string> e)
         {
-            string n = servername;
-            log.Add(e);
-            mainThread.Post((object state) =>
+            string n = Servername;
+            _log.Add(e);
+            _mainThread.Post((object state) =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -310,10 +312,10 @@ namespace RaftPrototype
 
         private void Stop_Click(object sender, EventArgs e)
         {
-            this.isStopped = true;
+            this._isStopped = true;
 
-            node.Dispose();
-            lock (updateWindowLockObject)
+            _node.Dispose();
+            lock (UpdateWindowLockObject)
             {
                 UpdateNodeWindow();
             }
@@ -322,8 +324,8 @@ namespace RaftPrototype
         private void Start_Click(object sender, EventArgs e)
         {
             btStart.Enabled = false;
-            isStopped = false;
-            log.Clear();
+            _isStopped = false;
+            _log.Clear();
 
             //run the configuration setup on background thread stop GUI from blocking
             Task task = new TaskFactory().StartNew(new Action<object>((test) =>
@@ -340,7 +342,7 @@ namespace RaftPrototype
                 return;
             }
 
-            Task<ERaftAppendEntryState> append = node.AppendEntry(tbKey.Text, tbValue.Text);
+            Task<ERaftAppendEntryState> append = _node.AppendEntry(tbKey.Text, tbValue.Text);
             tbKey.Clear();
             tbValue.Clear();
         }
@@ -356,7 +358,8 @@ namespace RaftPrototype
 
         private bool CheckLogEntry(string logEntryLine)
         {
-            if ( logEntryLine.IndexOf(servername) == 15)
+            int servername_start_char = 15;
+            if ( logEntryLine.IndexOf(Servername) == servername_start_char)
             {
                 return true;
             }
@@ -365,7 +368,8 @@ namespace RaftPrototype
 
         private void SetNodeStatus(string logentry)
         {
-            string str1 = logentry.Substring(29, logentry.IndexOf(')') - 29);//read log entry to get the status == 'FOLLOWER"
+            int state_string = 29;
+            string str1 = logentry.Substring(state_string, logentry.IndexOf(')') - state_string);//read log entry to get the status == 'FOLLOWER"
 
             if (lServerStatus.Text != str1)
             {
@@ -387,7 +391,7 @@ namespace RaftPrototype
                     continue;
                 }
                 IPEndPoint ipEndpoint = new IPEndPoint(IPAddress.Parse(config.nodeIPAddresses[i]), config.nodePorts[i]);
-                node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
+                _node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
             }
         }
 
@@ -396,12 +400,12 @@ namespace RaftPrototype
             for (int i = 0; i < config.maxNodes; i++)
             {
                 //Add the list of nodes into the PeerList
-                if (string.Equals(config.nodeNames[i], servername))
+                if (string.Equals(config.nodeNames[i], Servername))
                 {
                     continue;
                 }
                 IPEndPoint ipEndpoint = new IPEndPoint(IPAddress.Parse(config.nodeIPAddresses[i]), config.nodePorts[i]);
-                node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
+                _node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
             }
         }
         
@@ -413,26 +417,26 @@ namespace RaftPrototype
         {
             try
             {
-                mutex.WaitOne();
-                onClosing = true;
+                Mutex.WaitOne();
+                _onClosing = true;
                 RaftLogging.Instance.OnNewLogEntry -= HandleInfoLogUpdate;
             }
             finally
             {
-                mutex.ReleaseMutex();
+                Mutex.ReleaseMutex();
             }
             base.OnClosing(e);
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            node.Dispose();
-            mainThread = null;
+            _node.Dispose();
+            _mainThread = null;
             base.OnFormClosed(e);
         }
 
-        #endregion
 
+        #endregion
 
     }
 }

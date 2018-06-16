@@ -20,10 +20,11 @@ namespace RaftPrototype
 
                 if (args.Length == 3 )
                 {
-                    string serverName = args[0];
+                    //string serverName = args[0];
+                    int serverIndex = int.Parse(args[0]);
                     string configFile = args[1];
                     string logFile = args[2];
-                    Application.Run(new RaftNode(serverName, configFile, logFile));
+                    Application.Run(new RaftNode(serverIndex, configFile, logFile));
                 }
                 else if (args.Length == 1)
                 {
