@@ -267,12 +267,20 @@ namespace RaftPrototype
         private void nodeConfigDataView_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData((DataFormats.FileDrop));
+            //string s = files[0];
 
-            string s = files[0];
+            ProcessStartInfo startInfo = new ProcessStartInfo()
+            {
+                FileName = System.Reflection.Assembly.GetEntryAssembly().Location,
+                // ReSharper disable once AssignNullToNotNullAttribute
+                WorkingDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location),
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Normal
+            };
 
-            RaftStartNode startNode = new RaftStartNode(files[0]);
-            startNode.Show();
-            this.Hide();
+            startInfo.Arguments = string.Format("{0}", files[0]);
+            Process.Start(startInfo);
+            this.Close();
         }
     }
 }

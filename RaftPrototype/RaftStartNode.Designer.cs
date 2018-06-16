@@ -91,6 +91,7 @@
             // cbNodes
             // 
             this.cbNodes.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.cbNodes.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbNodes.FormattingEnabled = true;
             this.cbNodes.Location = new System.Drawing.Point(168, 3);
             this.cbNodes.Name = "cbNodes";
