@@ -18,27 +18,22 @@ namespace RaftPrototype
             {
                 RaftLogging.Instance.EnableBuffer(50);
 
-                if (args.Length == 3 )
+                if (args.Length == 3 ) //run a node
                 {
-                    //string serverName = args[0];
                     int serverIndex = int.Parse(args[0]);
                     string configFile = args[1];
                     string logFile = args[2];
                     Application.Run(new RaftNode(serverIndex, configFile, logFile));
                 }
-                else if (args.Length == 1)
+                else if (args.Length == 1) //select a node based on predefined config 
                 {
                     string configFile = args[0];
                     Application.Run(new RaftStartNode(configFile));
                 }
-                else //ALl other cases running the program to bootstrap
+                else //all other cases running the program to bootstrap
                 {
                     Application.Run(new RaftBootStrap());
                 }
-            }
-            catch (Exception e)
-            {
-                throw e;
             }
             finally
             {

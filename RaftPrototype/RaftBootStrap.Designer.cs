@@ -99,7 +99,7 @@
             this.button1.TabIndex = 2;
             this.button1.Text = "Exit";
             this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.Create_Button_Click);
+            this.button1.Click += new System.EventHandler(this.Exit_Button_Click);
             // 
             // label2
             // 

@@ -38,7 +38,6 @@ namespace RaftPrototype
         private bool _isStopped;
         private const int MAX_ATTEMPTS = 1;
 
-        //public RaftNode(string serverName, string configFile, string logFile, bool isInstansiated = false)
         public RaftNode(int index, string configFile, string logFile, bool isInstansiated = false)
         {
             //set local attributes
@@ -47,13 +46,13 @@ namespace RaftPrototype
             _logfile = logFile;
             _log = new List<Tuple<string, string>>();
             _isStopped = false;
-
-
             _mainThread = SynchronizationContext.Current;
-            if (_mainThread == null) { _mainThread = new SynchronizationContext(); }
-
-
             _onClosing = false;
+
+            if (_mainThread == null)
+            {
+                _mainThread = new SynchronizationContext();
+            } 
 
             InitializeComponent();
             Initialize();
@@ -64,46 +63,42 @@ namespace RaftPrototype
             }
         }
 
-        #region Setup Node
-
         private void Initialize()
         {
-            LoadConfig();
-            Text = string.Format("{0} - {1}", this.Text, Servername);
+            LoadConfig();//populate object with info from config file
+            Text = string.Format("{0} - {1}", Text, Servername);
             btStart.Enabled = false;
             FormBorderStyle = FormBorderStyle.FixedDialog;
-
-
             ERaftLogType[] logLevels = Enum.GetValues(typeof(ERaftLogType)).Cast<ERaftLogType>().ToArray();
+
             string[] logLevelStrings = new string[logLevels.Length];
             for (int i = 0; i < logLevels.Count(); i++)
             {
                 string temp = logLevels[i].ToString().ToLower();
                 logLevelStrings[i] = (temp[0] + "").ToUpper() + temp.Substring(1);
             }
+
             cbDebugLevel.DataSource = logLevelStrings;
             cbDebugLevel.SelectedIndex = (int) _logLevel;
 
             SetupLogging();
 
-            Task task = new TaskFactory().StartNew(new Action<object>((test) =>
+            Task task = new TaskFactory().StartNew(test =>
             {
                 StartNode();
-            }), TaskCreationOptions.None);
+            }, TaskCreationOptions.None);
         }
 
         public void LoadConfig()
         {
             string json = File.ReadAllText(_configurationFile);
             _config = JsonConvert.DeserializeObject<RaftBootstrapConfig>(json);
-
-            //index = int.Parse(servername.Replace("Node", ""))-1;
             Servername = _config.nodeNames[Index];
             Serverport = _config.nodePorts[Index];
             Serverip = _config.nodeIPAddresses[Index];
             _logLevel = _config.logLevel;
             _useEncryption = _config.useEncryption;
-            }
+        }
 
         private void StartNode()
         {
@@ -137,11 +132,11 @@ namespace RaftPrototype
                         _log.Clear();
                         if (MessageBox.Show("Failed to join cluster, do you want to retry?", "Error " + Servername, MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == DialogResult.Retry)
                         {
-                            continue;
+                            //continue;
                         }
                         else
                         {
-                            _mainThread.Send((object state) =>
+                            _mainThread.Send( state =>
                             {
                                 lock (UpdateWindowLockObject)
                                 {
@@ -154,7 +149,7 @@ namespace RaftPrototype
                 }
 
                 //update the main UI
-                _mainThread.Send((object state) =>
+                _mainThread.Send( state =>
                 {
                     lock (UpdateWindowLockObject)
                     {
@@ -164,7 +159,7 @@ namespace RaftPrototype
             }
             catch (Exception e)
             {
-                MessageBox.Show(Servername + "\n" + e.ToString());
+                MessageBox.Show(Servername + "\n" + e);
             }
         }
 
@@ -201,7 +196,7 @@ namespace RaftPrototype
                 {
                     if (!_onClosing)
                     {
-                        _mainThread.Post((object state) =>
+                        _mainThread.Post( state =>
                         {
                             if (CheckLogEntry(e.Item2))
                             {
@@ -224,8 +219,6 @@ namespace RaftPrototype
                 Mutex.ReleaseMutex();
             }
         }
-
-        #endregion
 
         private void UpdateNodeWindow()
         {
@@ -282,11 +275,9 @@ namespace RaftPrototype
             }
         }
 
-        #region event methods
-
         private void HandleUASStart(object sender, EventArgs e)
         {
-            _mainThread.Post((object state) =>
+            _mainThread.Post( state =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -294,7 +285,7 @@ namespace RaftPrototype
 
         private void HandleUASStop(object sender, EStopUasReason e)
         {
-            _mainThread.Post((object state) =>
+            _mainThread.Post( state =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -302,9 +293,8 @@ namespace RaftPrototype
 
         private void HandleNewCommitEntry(object sender, Tuple<string, string> e)
         {
-            string n = Servername;
             _log.Add(e);
-            _mainThread.Post((object state) =>
+            _mainThread.Post( state =>
             {
                 UpdateNodeWindow();
             }, null);
@@ -312,7 +302,7 @@ namespace RaftPrototype
 
         private void Stop_Click(object sender, EventArgs e)
         {
-            this._isStopped = true;
+            _isStopped = true;
 
             _node.Dispose();
             lock (UpdateWindowLockObject)
@@ -328,10 +318,10 @@ namespace RaftPrototype
             _log.Clear();
 
             //run the configuration setup on background thread stop GUI from blocking
-            Task task = new TaskFactory().StartNew(new Action<object>((test) =>
+            Task task = new TaskFactory().StartNew(test =>
             {
                 StartNode();
-            }), TaskCreationOptions.None);
+            }, TaskCreationOptions.None);
         }
 
         private void AppendMessage_Click(object sender, EventArgs e)
@@ -352,14 +342,10 @@ namespace RaftPrototype
             RaftLogging.Instance.LogLevel = ((ERaftLogType)cbDebugLevel.SelectedIndex);
         }
 
-        #endregion
-
-        #region utilities
-
         private bool CheckLogEntry(string logEntryLine)
         {
             int servername_start_char = 15;
-            if ( logEntryLine.IndexOf(Servername) == servername_start_char)
+            if ( logEntryLine.IndexOf(Servername, StringComparison.Ordinal) == servername_start_char)
             {
                 return true;
             }
@@ -377,10 +363,6 @@ namespace RaftPrototype
             }
         }
 
-        #endregion
-
-        #region consensus stuff
-
         private void AddPeers(RaftBootstrapConfig config, int id)
         {
             for (int i = 0; i < config.maxNodes; i++)
@@ -394,24 +376,6 @@ namespace RaftPrototype
                 _node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
             }
         }
-
-        private void AddPeers(RaftBootstrapConfig config)
-        {
-            for (int i = 0; i < config.maxNodes; i++)
-            {
-                //Add the list of nodes into the PeerList
-                if (string.Equals(config.nodeNames[i], Servername))
-                {
-                    continue;
-                }
-                IPEndPoint ipEndpoint = new IPEndPoint(IPAddress.Parse(config.nodeIPAddresses[i]), config.nodePorts[i]);
-                _node.ManualAddPeer(config.nodeNames[i], ipEndpoint);
-            }
-        }
-        
-        #endregion
-
-        #region closing
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -434,10 +398,6 @@ namespace RaftPrototype
             _mainThread = null;
             base.OnFormClosed(e);
         }
-
-
-        #endregion
-
     }
 }
 
